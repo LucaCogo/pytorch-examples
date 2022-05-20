@@ -8,6 +8,10 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from model import SRNet
 from data import get_training_set, get_test_set
+
+import wandb
+
+
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
 parser.add_argument('--upscale_factor', type=int, required=True, help="super resolution upscale factor")
@@ -19,6 +23,26 @@ parser.add_argument('--cuda', action='store_true', help='use cuda?')
 parser.add_argument('--threads', type=int, default=4, help='number of threads for data loader to use')
 parser.add_argument('--seed', type=int, default=123, help='random seed to use. Default=123')
 opt = parser.parse_args()
+
+
+wandb.login()
+
+# WandB – Initialize a new run
+run = wandb.init(project="super-resolution", entity="lcogo", name="exp1")
+wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
+
+# WandB – Config is a variable that holds and saves hyperparameters and inputs
+config = wandb.config          # Initialize config
+config.upscale_factor = opt.upscale_factor     # super resolution upscale factor
+config.batch_size = opt.batchSize          # input batch size for training (default: 64)
+config.test_batch_size = opt.testBatchSize    # input batch size for testing (default: 1000)
+config.epochs =  opt.nEpochs            # number of epochs to train (default: 10)
+config.lr = opt.lr               # learning rate (default: 0.01)
+config.cuda = opt.cuda         # enables CUDA training
+config.threads = opt.threads    # number of threads for data loader to use
+config.seed = opt.seed               # random seed (default: 42)
+
+
 
 print(f"TRAINING WITH: {opt}")
 
@@ -43,32 +67,51 @@ optimizer = optim.Adam(model.parameters(), lr=opt.lr)
 
 
 def train(epoch):
-    epoch_loss = 0
+    avg_psnr = 0
+    avg_loss = 0
     for iteration, batch in enumerate(training_data_loader, 1):
         input, target = batch[0].to(device), batch[1].to(device)
+        prediction = model(input)
 
         optimizer.zero_grad()
-        loss = criterion(model(input), target)
-        epoch_loss += loss.item()
+        loss = criterion(prediction, target)
+        avg_loss += loss.item()
+
+        mse = criterion(prediction, target)
+        psnr = 10 * log10(1 / mse.item())
+        avg_psnr += psnr
+
         loss.backward()
         optimizer.step()
 
         print("===> Epoch[{}]({}/{}): Loss: {:.4f}".format(epoch, iteration, len(training_data_loader), loss.item()))
 
-    print("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(training_data_loader)))
+    avg_psnr /= len(training_data_loader)
+    avg_loss /= len(training_data_loader)
+    print("===> Epoch {} Complete: Avg. Train Loss: {:.4f} | Avg. Train PSNR: {:.4f} dB".format(epoch, avg_loss, avg_psnr))
+
+    return avg_loss, avg_psnr
 
 
 def test():
     avg_psnr = 0
+    avg_loss = 0
     with torch.no_grad():
         for batch in testing_data_loader:
             input, target = batch[0].to(device), batch[1].to(device)
-
             prediction = model(input)
+
+            loss = criterion(prediction, target)
+            avg_loss += loss.item()
             mse = criterion(prediction, target)
             psnr = 10 * log10(1 / mse.item())
             avg_psnr += psnr
-    print("===> Avg. PSNR: {:.4f} dB".format(avg_psnr / len(testing_data_loader)))
+
+    avg_psnr /= len(testing_data_loader)
+    avg_loss /= len(testing_data_loader)
+    print("\n===> Avg. Val. Loss: {:.4f} | Avg. Val. PSNR: {:.4f} dB".format(avg_loss, avg_psnr), end="\n\n")
+
+    return avg_loss, avg_psnr
 
 
 def checkpoint(epoch):
@@ -77,6 +120,15 @@ def checkpoint(epoch):
     print("Checkpoint saved to {}".format(model_out_path))
 
 for epoch in range(1, opt.nEpochs + 1):
-    train(epoch)
-    test()
-    checkpoint(epoch)
+    train_loss, train_psnr = train(epoch)
+    test_loss, test_psnr = test()
+
+    wandb.log({
+        "Train Loss": train_loss,
+        "Test Loss": test_loss,
+        "Train PSNR": train_psnr,
+        "Test PSNR": test_psnr,
+    })
+
+    if epoch % 10 == 0:
+        checkpoint(epoch)
