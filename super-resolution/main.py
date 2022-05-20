@@ -29,7 +29,7 @@ if opt.wandb:
     wandb.login()
 
     # WandB – Initialize a new run
-    run = wandb.init(project="super-resolution", entity="lcogo", name=opt.wandb)
+    run = wandb.init(project="super-resolution", name=opt.wandb)
     wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
 
     # WandB – Config is a variable that holds and saves hyperparameters and inputs
