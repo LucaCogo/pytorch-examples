@@ -24,7 +24,6 @@ class SRNet(nn.Module):
         x = self.relu(self.conv3(x))
         x = self.relu(self.conv4(x))
         x = self.relu(self.conv5(x))
-        x = self.relu(self.conv6(x))
         x = self.pixel_shuffle(self.conv6(x))
         return x
 
