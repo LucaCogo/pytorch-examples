@@ -22,25 +22,26 @@ parser.add_argument('--lr', type=float, default=0.01, help='Learning Rate. Defau
 parser.add_argument('--cuda', action='store_true', help='use cuda?')
 parser.add_argument('--threads', type=int, default=4, help='number of threads for data loader to use')
 parser.add_argument('--seed', type=int, default=123, help='random seed to use. Default=123')
+parser.add_argument('--wandb', type=str, help='Wandb experiment name. Il not specified wandb is not used')
 opt = parser.parse_args()
 
+if hasattr(opt, 'wandb'):
+    wandb.login()
 
-wandb.login()
+    # WandB – Initialize a new run
+    run = wandb.init(project="super-resolution", entity="lcogo", name=opt.wandb)
+    wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
 
-# WandB – Initialize a new run
-run = wandb.init(project="super-resolution", entity="lcogo", name="exp1")
-wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
-
-# WandB – Config is a variable that holds and saves hyperparameters and inputs
-config = wandb.config          # Initialize config
-config.upscale_factor = opt.upscale_factor     # super resolution upscale factor
-config.batch_size = opt.batchSize          # input batch size for training (default: 64)
-config.test_batch_size = opt.testBatchSize    # input batch size for testing (default: 1000)
-config.epochs =  opt.nEpochs            # number of epochs to train (default: 10)
-config.lr = opt.lr               # learning rate (default: 0.01)
-config.cuda = opt.cuda         # enables CUDA training
-config.threads = opt.threads    # number of threads for data loader to use
-config.seed = opt.seed               # random seed (default: 42)
+    # WandB – Config is a variable that holds and saves hyperparameters and inputs
+    config = wandb.config          # Initialize config
+    config.upscale_factor = opt.upscale_factor     # super resolution upscale factor
+    config.batch_size = opt.batchSize          # input batch size for training (default: 64)
+    config.test_batch_size = opt.testBatchSize    # input batch size for testing (default: 1000)
+    config.epochs =  opt.nEpochs            # number of epochs to train (default: 10)
+    config.lr = opt.lr               # learning rate (default: 0.01)
+    config.cuda = opt.cuda         # enables CUDA training
+    config.threads = opt.threads    # number of threads for data loader to use
+    config.seed = opt.seed               # random seed (default: 42)
 
 
 
@@ -123,12 +124,14 @@ for epoch in range(1, opt.nEpochs + 1):
     train_loss, train_psnr = train(epoch)
     test_loss, test_psnr = test()
 
-    wandb.log({
-        "Train Loss": train_loss,
-        "Test Loss": test_loss,
-        "Train PSNR": train_psnr,
-        "Test PSNR": test_psnr,
-    })
 
-    if epoch % 10 == 0:
-        checkpoint(epoch)
+    if opt.wandb:
+        wandb.log({
+            "Train Loss": train_loss,
+            "Test Loss": test_loss,
+            "Train PSNR": train_psnr,
+            "Test PSNR": test_psnr,
+        })
+
+        if epoch % 10 == 0:
+            checkpoint(epoch)
