@@ -20,7 +20,7 @@ parser.add_argument('--threads', type=int, default=4, help='number of threads fo
 parser.add_argument('--seed', type=int, default=123, help='random seed to use. Default=123')
 opt = parser.parse_args()
 
-print(opt)
+print(f"TRAINING WITH: {opt}")
 
 if opt.cuda and not torch.cuda.is_available():
     raise Exception("No GPU found, please run without --cuda")
