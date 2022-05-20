@@ -25,7 +25,7 @@ parser.add_argument('--seed', type=int, default=123, help='random seed to use. D
 parser.add_argument('--wandb', type=str, help='Wandb experiment name. Il not specified wandb is not used')
 opt = parser.parse_args()
 
-if hasattr(opt, 'wandb'):
+if opt.wandb:
     wandb.login()
 
     # WandB – Initialize a new run
