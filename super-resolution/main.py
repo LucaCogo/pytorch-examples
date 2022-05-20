@@ -22,14 +22,15 @@ parser.add_argument('--lr', type=float, default=0.01, help='Learning Rate. Defau
 parser.add_argument('--cuda', action='store_true', help='use cuda?')
 parser.add_argument('--threads', type=int, default=4, help='number of threads for data loader to use')
 parser.add_argument('--seed', type=int, default=123, help='random seed to use. Default=123')
-parser.add_argument('--wandb', type=str, help='Wandb experiment name. Il not specified wandb is not used')
+parser.add_argument('--wandb', action='store_true', help='use wandb?')
+parser.add_argument('--expName', type=str, help='Wandb experiment name. Used when wandb experiment is used', default="Unnamed_exp")
 opt = parser.parse_args()
 
 if opt.wandb:
     wandb.login()
 
     # WandB – Initialize a new run
-    run = wandb.init(project="super-resolution", name=opt.wandb)
+    run = wandb.init(project="super-resolution", name=opt.expName)
     wandb.watch_called = False # Re-run the model without restarting the runtime, unnecessary after our next release
 
     # WandB – Config is a variable that holds and saves hyperparameters and inputs
