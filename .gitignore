@@ -1,1 +1,3 @@
-basicvsr++/.env
+basicvsr++/venv
+basicvsr++/models/RAFT/raft_sintel.pth
+basicvsr++/models/SPyNet/spynet.pth

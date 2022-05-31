@@ -2,6 +2,7 @@
 import argparse
 import copy
 import osapis
+import os
 import os.path as osp
 import time
 
@@ -11,11 +12,11 @@ import torch.distributed as dist
 from mmcv import Config, DictAction
 from mmcv.runner import init_dist
 
-from mmedit import __version__
-from mmedit.apis import init_random_seed, set_random_seed, train_model
-from mmedit.datasets import build_dataset
-from mmedit.models import build_model
-from mmedit.utils import collect_env, get_root_logger, setup_multi_processes
+# from mmedit import __version__
+# from mmedit.apis import init_random_seed, set_random_seed, train_model
+# from mmedit.datasets import build_dataset
+# from mmedit.models import build_model
+# from mmedit.utils import collect_env, get_root_logger, setup_multi_processes
 
 
 def parse_args():

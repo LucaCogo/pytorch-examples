@@ -121,6 +121,8 @@ def checkpoint(epoch):
     torch.save(model, model_out_path)
     print("Checkpoint saved to {}".format(model_out_path))
 
+
+
 for epoch in range(1, opt.nEpochs + 1):
     train_loss, train_psnr = train(epoch)
     test_loss, test_psnr = test()
